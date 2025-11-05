@@ -1,0 +1,48 @@
+{% extends 'home/base.html' %}
+
+{% block title %}CalendarBuddy - Home{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Left Column: How to Get Started -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h3 class="card-title">How to get started</h3>
+                    <div class="flex-grow-1"></div>
+                    <a href="#" class="btn btn-outline-secondary mt-3">FAQ's</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column: Interactive Map -->
+        <div class="col-md-5 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div class="interactive-map-placeholder border rounded p-4 mb-3 flex-grow-1 d-flex align-items-center justify-content-center">
+                        <p class="text-center text-muted mb-0">Interactive Map showing<br>all users who<br>use the platform</p>
+                    </div>
+                    <a href="#" class="btn btn-primary">Join Today</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Sample Images -->
+        <div class="col-md-3 mb-4">
+            <div class="d-flex flex-column h-100">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body text-center">
+                        <p class="mb-0">Sample<br>image #1</p>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <p class="mb-0">Sample<br>image #2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
