@@ -1,0 +1,135 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Groups - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Groups</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">Create New Group</button>
+    </div>
+
+    {% if admin_groups %}
+    <div class="mb-4">
+        <h4>Groups I Admin</h4>
+        <div class="row">
+            {% for group in admin_groups %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ group.name }}</h5>
+                        <p class="card-text">{{ group.description|default:"No description" }}</p>
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-sm btn-primary">Manage Group</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if member_groups %}
+    <div class="mb-4">
+        <h4>Groups I'm In</h4>
+        <div class="row">
+            {% for group in member_groups %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ group.name }}</h5>
+                        <p class="card-text">{{ group.description|default:"No description" }}</p>
+                        <a href="{% url 'group_detail' group.id %}" class="btn btn-sm btn-secondary">View Group</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not admin_groups and not member_groups %}
+    <div class="alert alert-info">
+        <p class="mb-0">You are not a member of any groups yet. Create a new group or ask someone to add you to their group.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Create Group Modal -->
+<div class="modal fade" id="createGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createGroupForm">
+                    <div class="mb-3">
+                        <label for="group_name" class="form-label">Group Name</label>
+                        <input type="text" class="form-control" id="group_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="group_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="group_description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createGroup()">Create Group</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    async function createGroup() {
+        const name = document.getElementById('group_name').value;
+        const description = document.getElementById('group_description').value;
+
+        if (!name) {
+            alert('Please enter a group name');
+            return;
+        }
+
+        try {
+            const response = await fetch('{% url "create_group" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ name, description })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error creating group: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error);
+        }
+    }
+</script>
+{% endblock %}

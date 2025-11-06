@@ -87,11 +87,17 @@
                                         <div class="day-number">{{ day }}</div>
                                         {% if day in tasks_by_date %}
                                             <div class="tasks-container">
-                                                {% for task in tasks_by_date|get_item:day %}
-                                                    <div class="task-item task-{{ task.color }}" data-task-id="{{ task.id }}" title="{{ task.title }}{% if task.location %} - {{ task.location }}{% endif %}">
-                                                        <small>{{ task.title|truncatechars:15 }}</small>
-                                                        <button class="btn-delete-task" onclick="deleteTask({{ task.id }})">&times;</button>
-                                                    </div>
+                                                {% for item in tasks_by_date|get_item:day %}
+                                                    {% if item.type == 'personal' %}
+                                                        <div class="task-item task-{{ item.task.color }}" data-task-id="{{ item.task.id }}" title="{{ item.task.title }}{% if item.task.location %} - {{ item.task.location }}{% endif %}">
+                                                            <small>{{ item.task.title|truncatechars:15 }}</small>
+                                                            <button class="btn-delete-task" onclick="deleteTask({{ item.task.id }})">&times;</button>
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="task-item task-assigned task-{{ item.task.color }}" data-task-id="{{ item.task.id }}" title="[{{ item.group_name }}] {{ item.task.title }}{% if item.task.location %} - {{ item.task.location }}{% endif %}">
+                                                            <small>[{{ item.group_name|truncatechars:8 }}] {{ item.task.title|truncatechars:12 }}</small>
+                                                        </div>
+                                                    {% endif %}
                                                 {% endfor %}
                                             </div>
                                         {% endif %}
@@ -223,6 +229,11 @@
     .task-yellow { background-color: #fff3cd; border-left: 3px solid #ffc107; }
     .task-purple { background-color: #e2d9f3; border-left: 3px solid #6f42c1; }
     .task-orange { background-color: #ffe5d0; border-left: 3px solid #fd7e14; }
+
+    .task-assigned {
+        font-style: italic;
+        opacity: 0.9;
+    }
 
     .list-group-item {
         padding: 0.5rem 0.75rem;
