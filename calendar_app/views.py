@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import datetime, date
+from django.utils import timezone
+from datetime import timedelta
+import requests
 import calendar
 from .models import Task  # Removed EventCategory import
 from .forms import TaskForm, CalendarSearchForm
@@ -111,3 +114,62 @@ def delete_task(request, task_id):
         task.delete()
         return redirect('calendar_app:calendar_view')
     return redirect('calendar_app:calendar_view')
+
+
+def get_weather(lat, long):
+    headers = {
+        "User-Agent": "calender_buddy",
+        "Accept": "application/json"
+    }
+    points_url = f"https://api.weather.gov/points/{lat},{long}"
+    print("Fetching weather data from:", points_url)
+    resp = requests.get(points_url, headers=headers)
+    print("Status code:", resp.status_code)
+    print("Content snippet:", resp.text[:500])
+    
+    if resp.status_code != 200:
+        return {}
+    grid_data = resp.json()
+    if "properties" not in grid_data:
+        print("No properties key found in response!")
+        return {}
+    forecast_url = grid_data["properties"]["forecast"]
+
+    forecast_resp = requests.get(forecast_url, headers=headers)
+    if forecast_resp.status_code != 200:
+        return {}
+
+    forecast_data = forecast_resp.json()
+    # Return just the first period (today or next)
+    first_period = forecast_data["properties"]["periods"][0]
+    print("test",first_period)
+    return {
+        "name": first_period["name"],
+        "temperature": first_period["temperature"],
+        "temperatureUnit": first_period["temperatureUnit"],
+        "precipitation": first_period.get("probabilityOfPrecipitation", {}).get("value", 0),
+        "detailedForecast": first_period["detailedForecast"]
+    }
+
+
+@login_required
+def user_page(request):
+    today = timezone.now().date()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday
+    end_of_week = start_of_week + timedelta(days=6)  # Sunday
+
+    # Filter tasks for the current user within this week
+    weekly_tasks = Task.objects.filter(
+        user=request.user,
+        date__range=[start_of_week, end_of_week]
+    ).order_by('date')
+
+    weather = get_weather(33.7756,-84.3963) 
+    context = {
+        'weekly_tasks': weekly_tasks,
+        'start_of_week': start_of_week,
+        'end_of_week': end_of_week,
+        'weather': weather,
+    }
+
+    return render(request, 'calendar_app/user_page.html', context)
