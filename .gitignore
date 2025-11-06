@@ -9,10 +9,6 @@ __pycache__/
 *.pot
 *.pyc
 media/
-staticfiles/
-
-# Keep db.sqlite3 because you share it
-# (so don't include it in .gitignore)
 
 # Environments
 .env
