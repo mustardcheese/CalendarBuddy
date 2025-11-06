@@ -51,10 +51,14 @@ def login_view(request):
 @login_required
 def calendar_view(request):
     """Calendar view with tasks"""
-    # Get current month and year from query params or use current date
     year = int(request.GET.get('year', datetime.now().year))
     month = int(request.GET.get('month', datetime.now().month))
 
+    # Ensure weeks start on Sunday
+    calendar.setfirstweekday(calendar.SUNDAY)
+    cal = calendar.monthcalendar(year, month)
+    month_name = calendar.month_name[month]
+    
     # Get filter parameters
     filter_date = request.GET.get('filter_date') == 'on'
     filter_location = request.GET.get('filter_location') == 'on'
@@ -113,14 +117,20 @@ def add_task(request):
     """Add a new task via AJAX"""
     try:
         data = json.loads(request.body)
+
+        # Parse the date string into a proper Python date object
+        date_str = data.get('date')
+        task_date = datetime.fromisoformat(date_str).date() if date_str else None
+
         task = Task.objects.create(
             user=request.user,
             title=data.get('title'),
             description=data.get('description', ''),
-            date=data.get('date'),
+            date=task_date,  # use the parsed date here
             location=data.get('location', ''),
             color=data.get('color', 'blue')
         )
+
         return JsonResponse({
             'success': True,
             'task': {
