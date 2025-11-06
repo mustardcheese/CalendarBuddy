@@ -1,0 +1,20 @@
+# Ignore compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django-specific stuff
+*.log
+*.pot
+*.pyc
+media/
+staticfiles/
+
+# Keep db.sqlite3 because you share it
+# (so don't include it in .gitignore)
+
+# Environments
+.env
+venv/
+.env/

@@ -1,0 +1,397 @@
+{% extends 'home/base.html' %} 
+{% load calendar_tags %}
+
+{% block title %}Calendar - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Left Sidebar -->
+        <div class="col-md-2">
+            <h5 class="mb-3">Calendar</h5>
+
+            <!-- Month List -->
+            <div class="list-group mb-4">
+                <a href="?month=1&year={{ year }}" class="list-group-item list-group-item-action {% if month == 1 %}active{% endif %}">January</a>
+                <a href="?month=2&year={{ year }}" class="list-group-item list-group-item-action {% if month == 2 %}active{% endif %}">February</a>
+                <a href="?month=3&year={{ year }}" class="list-group-item list-group-item-action {% if month == 3 %}active{% endif %}">March</a>
+                <a href="?month=4&year={{ year }}" class="list-group-item list-group-item-action {% if month == 4 %}active{% endif %}">April</a>
+                <a href="?month=5&year={{ year }}" class="list-group-item list-group-item-action {% if month == 5 %}active{% endif %}">May</a>
+                <a href="?month=6&year={{ year }}" class="list-group-item list-group-item-action {% if month == 6 %}active{% endif %}">June</a>
+                <a href="?month=7&year={{ year }}" class="list-group-item list-group-item-action {% if month == 7 %}active{% endif %}">July</a>
+                <a href="?month=8&year={{ year }}" class="list-group-item list-group-item-action {% if month == 8 %}active{% endif %}">August</a>
+                <a href="?month=9&year={{ year }}" class="list-group-item list-group-item-action {% if month == 9 %}active{% endif %}">September</a>
+                <a href="?month=10&year={{ year }}" class="list-group-item list-group-item-action {% if month == 10 %}active{% endif %}">October</a>
+                <a href="?month=11&year={{ year }}" class="list-group-item list-group-item-action {% if month == 11 %}active{% endif %}">November</a>
+                <a href="?month=12&year={{ year }}" class="list-group-item list-group-item-action {% if month == 12 %}active{% endif %}">December</a>
+            </div>
+
+            <!-- FILTER SECTION REMOVED -->
+            
+        </div>
+
+        <!-- Main Calendar -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn btn-sm btn-outline-primary">&lt;</a>
+                    <h4 class="mb-0">{{ month_name }} {{ year }}</h4>
+                    <a href="?month={{ next_month }}&year={{ next_year }}" class="btn btn-sm btn-outline-primary">&gt;</a>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0 calendar-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Sun</th>
+                                <th class="text-center">Mon</th>
+                                <th class="text-center">Tue</th>
+                                <th class="text-center">Wed</th>
+                                <th class="text-center">Thu</th>
+                                <th class="text-center">Fri</th>
+                                <th class="text-center">Sat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week in calendar %}
+                            <tr>
+                                {% for day in week %}
+                                <td class="calendar-day {% if day == 0 %}empty-day{% endif %}">
+                                    {% if day != 0 %}
+                                        <div class="day-number">{{ day }}</div>
+                                        {% if day in tasks_by_date %}
+                                            <div class="tasks-container">
+                                                {% for task in tasks_by_date|get_item:day %}
+                                                    <div class="task-item task-{{ task.color }}" 
+                                                         data-task-id="{{ task.id }}"
+                                                         data-title="{{ task.title }}"
+                                                         data-date="{{ task.date|date:'M d, Y' }}"
+                                                         data-location="{{ task.location }}"
+                                                         data-description="{{ task.description }}"
+                                                         data-category="{{ task.category }}"
+                                                         data-color="{{ task.color }}"
+                                                         data-delete-url="{% url 'calendar_app:delete_task' task.id %}"
+                                                         style="cursor: pointer;">
+                                                        
+                                                        <!-- Display Title and Location -->
+                                                        <div class="task-content">
+                                                            <small class="task-title">{{ task.title|truncatechars:15 }}</small>
+                                                            {% if task.location %}
+                                                                <br><small class="task-location">{{ task.location|truncatechars:12 }}</small>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <!-- Delete Button -->
+                                                        <form method="post" action="{% url 'calendar_app:delete_task' task.id %}" 
+                                                              class="delete-form" onclick="event.stopPropagation();">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn-delete-task" 
+                                                                    onclick="return confirm('Are you sure?')">&times;</button>
+                                                        </form>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-md-2">
+            <!-- Search & Filter -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="card-title">Search & Filter</h6>
+                    <form method="get">
+                        <input type="hidden" name="month" value="{{ month }}">
+                        <input type="hidden" name="year" value="{{ year }}">
+                        
+                        <!-- Keyword Search -->
+                        <div class="mb-2">
+                            <label class="form-label small">Keyword:</label>
+                            {{ search_form.search }}
+                        </div>
+                        
+                        <!-- Category Filter -->
+                        <div class="mb-2">
+                            <label class="form-label small">Category:</label>
+                            {{ search_form.category }}
+                        </div>
+                        
+                        <!-- Date Range -->
+                        <div class="mb-2">
+                            <label class="form-label small">From Date:</label>
+                            {{ search_form.start_date }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small">To Date:</label>
+                            {{ search_form.end_date }}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
+                            <a href="?month={{ month }}&year={{ year }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Add Task -->
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Add Task</h6>
+                    
+                    {% if task_form.errors %}
+                    <div class="alert alert-danger small">
+                        Please correct the errors below.
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="add_task" value="true">
+                        
+                        <!-- Task Title -->
+                        <div class="mb-2">
+                            <label class="form-label small">Task Title:</label>
+                            {{ task_form.title }}
+                            {% if task_form.title.errors %}
+                            <div class="text-danger small">{{ task_form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Task Description -->
+                        <div class="mb-2">
+                            <label class="form-label small">Description:</label>
+                            {{ task_form.description }}
+                            {% if task_form.description.errors %}
+                            <div class="text-danger small">{{ task_form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label small">Date:</label>
+                            {{ task_form.date }}
+                            {% if task_form.date.errors %}
+                            <div class="text-danger small">{{ task_form.date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label small">Location:</label>
+                            {{ task_form.location }}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label small">Color:</label>
+                            {{ task_form.color }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small">Category:</label>
+                            {{ task_form.category }}
+                        </div>
+                        
+                        <button type="submit" class="btn btn-sm btn-success w-100">Add Task</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskModalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Date:</strong><br><span id="taskModalDate"></span></p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Category:</strong><br><span id="taskModalCategory"></span></p>
+                    </div>
+                </div>
+                <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
+                <p><strong>Description:</strong><br><span id="taskModalDescription"></span></p>
+                <p><strong>Color:</strong> 
+                    <span id="taskModalColor" class="badge" style="margin-left: 10px;"></span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="" id="taskModalDeleteForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this task?')">
+                        Delete Task
+                    </button>
+                </form>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-table {
+        table-layout: fixed;
+    }
+
+    .calendar-day {
+        height: 120px;
+        vertical-align: top;
+        padding: 5px;
+        position: relative;
+    }
+
+    .empty-day {
+        background-color: #f8f9fa;
+    }
+
+    .day-number {
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    .tasks-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .task-item {
+        padding: 3px 5px;
+        border-radius: 3px;
+        font-size: 11px;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2px;
+    }
+
+    .task-content {
+        flex-grow: 1;
+    }
+
+    .task-title {
+        font-weight: bold;
+        display: block;
+    }
+
+    .task-location {
+        color: #666;
+        font-size: 9px;
+        display: block;
+        margin-top: -1px;
+    }
+
+    .btn-delete-task {
+        background: rgba(0, 0, 0, 0.2);
+        border: none;
+        border-radius: 3px;
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-left: 5px;
+    }
+
+    .btn-delete-task:hover {
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .delete-form {
+        display: inline;
+        margin: 0;
+        padding: 0;
+    }
+
+    .task-blue { background-color: #cfe2ff; border-left: 3px solid #0d6efd; }
+    .task-green { background-color: #d1e7dd; border-left: 3px solid #198754; }
+    .task-red { background-color: #f8d7da; border-left: 3px solid #dc3545; }
+    .task-yellow { background-color: #fff3cd; border-left: 3px solid #ffc107; }
+    .task-purple { background-color: #e2d9f3; border-left: 3px solid #6f42c1; }
+    .task-orange { background-color: #ffe5d0; border-left: 3px solid #fd7e14; }
+
+    .list-group-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+</style>
+
+<script>
+    // Task Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
+        
+        // Add click event to all task items
+        document.querySelectorAll('.task-item').forEach(function(taskItem) {
+            taskItem.addEventListener('click', function(event) {
+                // Don't trigger modal if delete button was clicked
+                if (event.target.closest('.delete-form')) {
+                    return;
+                }
+                
+                // Get task data from data attributes
+                const taskId = this.dataset.taskId;
+                const title = this.dataset.title;
+                const date = this.dataset.date;
+                const location = this.dataset.location || 'Not specified';
+                const description = this.dataset.description || 'No description';
+                const category = this.dataset.category || 'Uncategorized';
+                const color = this.dataset.color;
+                const deleteUrl = this.dataset.deleteUrl;
+                
+                // Populate modal with task data
+                document.getElementById('taskModalTitle').textContent = title;
+                document.getElementById('taskModalDate').textContent = date;
+                document.getElementById('taskModalLocation').textContent = location;
+                document.getElementById('taskModalDescription').textContent = description;
+                document.getElementById('taskModalCategory').textContent = category;
+                
+                // Set color badge
+                const colorBadge = document.getElementById('taskModalColor');
+                colorBadge.textContent = color.charAt(0).toUpperCase() + color.slice(1);
+                colorBadge.className = 'badge';
+                colorBadge.classList.add('bg-' + getColorClass(color));
+                
+                // Update delete form action
+                document.getElementById('taskModalDeleteForm').action = deleteUrl;
+                
+                // Show modal
+                taskModal.show();
+            });
+        });
+    });
+    
+    // Helper function to map color names to Bootstrap classes
+    function getColorClass(color) {
+        const colorMap = {
+            'blue': 'primary',
+            'green': 'success',
+            'red': 'danger',
+            'yellow': 'warning',
+            'purple': 'info',
+            'orange': 'warning'
+        };
+        return colorMap[color] || 'secondary';
+    }
+</script>
+{% endblock %}
