@@ -18,12 +18,12 @@ class Task(models.Model):
         ('orange', 'Orange'),
     ]
     
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    title = models.CharField(max_length=200)  # Short title/name
+    description = models.TextField(blank=True)  # Longer description
     date = models.DateField()
     location = models.CharField(max_length=200, blank=True)
-    color = models.CharField(max_length=20, choices=COLOR_CHOICES, default='blue')  # Added default
-    category = models.ForeignKey(EventCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    color = models.CharField(max_length=20, choices=COLOR_CHOICES, default='blue')
+    category = models.CharField(max_length=50, blank=True, default='')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     

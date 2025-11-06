@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import datetime, date
 import calendar
-from .models import Task, EventCategory
+from .models import Task  # Removed EventCategory import
 from .forms import TaskForm, CalendarSearchForm
 
 @login_required
@@ -45,7 +45,7 @@ def calendar_view(request):
     
     if search_form.is_valid():
         search_keyword = search_form.cleaned_data.get('search')
-        category = search_form.cleaned_data.get('category')
+        category_filter = search_form.cleaned_data.get('category')
         start_date = search_form.cleaned_data.get('start_date')
         end_date = search_form.cleaned_data.get('end_date')
         
@@ -54,11 +54,12 @@ def calendar_view(request):
             tasks = tasks.filter(
                 Q(title__icontains=search_keyword) | 
                 Q(description__icontains=search_keyword) |
-                Q(location__icontains=search_keyword)
+                Q(location__icontains=search_keyword) |
+                Q(category__icontains=search_keyword)  # FIXED: Added missing pipe character
             )
         
-        if category:
-            tasks = tasks.filter(category=category)
+        if category_filter:
+            tasks = tasks.filter(category__icontains=category_filter)
         
         if start_date:
             tasks = tasks.filter(date__gte=start_date)
@@ -95,7 +96,6 @@ def calendar_view(request):
         'next_year': next_year,
         'task_form': task_form,
         'search_form': search_form,
-        'categories': EventCategory.objects.all(),
         'search_keyword': request.GET.get('search', ''),
         'filter_date': request.GET.get('filter_date'),
         'filter_location': request.GET.get('filter_location'),

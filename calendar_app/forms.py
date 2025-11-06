@@ -1,12 +1,16 @@
 from django import forms
-from .models import Task, EventCategory
+from .models import Task
 
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'date', 'location', 'color', 'category']
+        fields = ['title', 'description', 'date', 'location', 'color', 'category']
         widgets = {
-            'title': forms.Textarea(attrs={
+            'title': forms.TextInput(attrs={  # Changed from Textarea to TextInput
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Enter task title...'
+            }),
+            'description': forms.Textarea(attrs={  # Separate description field
                 'rows': 3, 
                 'class': 'form-control form-control-sm',
                 'placeholder': 'Enter task description...'
@@ -22,16 +26,11 @@ class TaskForm(forms.ModelForm):
             'color': forms.Select(attrs={
                 'class': 'form-select form-select-sm'
             }),
-            'category': forms.Select(attrs={
-                'class': 'form-select form-select-sm'
+            'category': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm',
+                'placeholder': 'Enter category...'
             }),
         }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Set default color if needed
-        if not self.instance.pk:  # Only for new tasks
-            self.initial['color'] = 'blue'
 
 class CalendarSearchForm(forms.Form):
     search = forms.CharField(
@@ -42,11 +41,13 @@ class CalendarSearchForm(forms.Form):
         })
     )
     
-    category = forms.ModelChoiceField(
-        queryset=EventCategory.objects.all(),
+    category = forms.CharField(  # Changed from ModelChoiceField to CharField
         required=False,
-        empty_label="All Categories",
-        widget=forms.Select(attrs={'class': 'form-select form-select-sm'})
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-sm',
+            'placeholder': 'Filter by category...'
+        }),
+        label="Category"
     )
     
     start_date = forms.DateField(
