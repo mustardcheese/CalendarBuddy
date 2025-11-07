@@ -68,6 +68,7 @@
                                                          data-location="{{ task.location }}"
                                                          data-description="{{ task.description }}"
                                                          data-color="{{ task.color }}"
+                                                         data-category="{{ task.get_category_display }}"
                                                          data-is-assigned="{{ task.is_assigned_task }}"
                                                          data-assigned-by="{% if task.assigned_by %}{{ task.assigned_by.username }}{% endif %}"
                                                          data-group="{% if task.group %}{{ task.group.name }}{% endif %}"
@@ -196,10 +197,15 @@
                             <label class="form-label small">Location:</label>
                             {{ task_form.location }}
                         </div>
-                        
-                        <div class="mb-3">
+
+                        <div class="mb-2">
                             <label class="form-label small">Color:</label>
                             {{ task_form.color }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small">Category:</label>
+                            {{ task_form.category }}
                         </div>
 
                         <button type="submit" class="btn btn-sm btn-success w-100">Add Task</button>
@@ -229,7 +235,14 @@
                         </p>
                     </div>
                 </div>
-                <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Category:</strong><br><span id="taskModalCategory"></span></p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
+                    </div>
+                </div>
                 <p><strong>Description:</strong><br><span id="taskModalDescription"></span></p>
 
                 <!-- Assigned Task Information -->
@@ -387,6 +400,7 @@
                 const location = this.dataset.location || 'Not specified';
                 const description = this.dataset.description || 'No description';
                 const color = this.dataset.color;
+                const category = this.dataset.category || 'Not specified';
                 const deleteUrl = this.dataset.deleteUrl;
                 const isAssigned = this.dataset.isAssigned === 'True';
                 const assignedBy = this.dataset.assignedBy;
@@ -397,6 +411,7 @@
                 document.getElementById('taskModalTitle').textContent = title;
                 document.getElementById('taskModalDate').textContent = date;
                 document.getElementById('taskModalLocation').textContent = location;
+                document.getElementById('taskModalCategory').textContent = category;
                 document.getElementById('taskModalDescription').textContent = description;
 
                 // Set color badge

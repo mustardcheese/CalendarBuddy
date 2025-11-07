@@ -4,14 +4,14 @@ from home.models import Task
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'date', 'location', 'color']
+        fields = ['title', 'description', 'date', 'location', 'color', 'category']
         widgets = {
             'title': forms.TextInput(attrs={  # Changed from Textarea to TextInput
                 'class': 'form-control form-control-sm',
                 'placeholder': 'Enter task title...'
             }),
             'description': forms.Textarea(attrs={  # Separate description field
-                'rows': 3, 
+                'rows': 3,
                 'class': 'form-control form-control-sm',
                 'placeholder': 'Enter task description...'
             }),
@@ -26,6 +26,9 @@ class TaskForm(forms.ModelForm):
             'color': forms.Select(attrs={
                 'class': 'form-select form-select-sm'
             }),
+            'category': forms.Select(attrs={
+                'class': 'form-select form-select-sm'
+            }),
         }
 
 class CalendarSearchForm(forms.Form):
@@ -37,11 +40,11 @@ class CalendarSearchForm(forms.Form):
         })
     )
     
-    category = forms.CharField(  # Changed from ModelChoiceField to CharField
+    category = forms.ChoiceField(
         required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control form-control-sm',
-            'placeholder': 'Filter by category...'
+        choices=[('', 'All Categories')] + Task.CATEGORY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-sm'
         }),
         label="Category"
     )

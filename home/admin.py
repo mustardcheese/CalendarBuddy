@@ -46,25 +46,40 @@ class TaskAdminForm(forms.ModelForm):
         user = cleaned_data.get('user')
         group = cleaned_data.get('group')
 
-        if user and group:
-            raise ValidationError('A task can be assigned to either a user OR a group, not both.')
-
+        # Ensure at least one is selected
         if not user and not group:
             raise ValidationError('A task must be assigned to either a user or a group.')
 
+        # Ensure only one is selected
+        if user and group:
+            raise ValidationError('A task can be assigned to either a user OR a group, not both.')
+
         return cleaned_data
+
+    def save(self, commit=True):
+        """Override save to ensure user field is properly set to None if not provided"""
+        instance = super().save(commit=False)
+
+        # Explicitly set user to None if it's not in cleaned_data or is empty
+        if not self.cleaned_data.get('user'):
+            instance.user = None
+
+        if commit:
+            instance.save()
+
+        return instance
 
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     form = TaskAdminForm
-    list_display = ['title', 'user', 'date', 'group', 'assigned_by', 'is_deletable', 'created_at']
-    list_filter = ['date', 'color', 'is_deletable', 'group']
+    list_display = ['title', 'user', 'date', 'category', 'group', 'assigned_by', 'is_deletable', 'created_at']
+    list_filter = ['date', 'color', 'category', 'is_deletable', 'group']
     search_fields = ['title', 'description', 'user__username']
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Basic Information', {
-            'fields': ('title', 'description', 'date', 'location', 'color')
+            'fields': ('title', 'description', 'date', 'location', 'color', 'category')
         }),
         ('Assignment', {
             'fields': ('user', 'group', 'assigned_by', 'is_deletable'),
@@ -75,3 +90,11 @@ class TaskAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def save_model(self, request, obj, form, change):
+        """Ensure user field is properly set to None if group is selected"""
+        if obj.group and not obj.user:
+            obj.user = None
+        elif obj.user and not obj.group:
+            obj.group = None
+        super().save_model(request, obj, form, change)

@@ -55,7 +55,7 @@ def calendar_view(request):
         category_filter = search_form.cleaned_data.get('category')
         start_date = search_form.cleaned_data.get('start_date')
         end_date = search_form.cleaned_data.get('end_date')
-        
+
         # Apply filters
         if search_keyword:
             tasks = tasks.filter(
@@ -63,7 +63,10 @@ def calendar_view(request):
                 Q(description__icontains=search_keyword) |
                 Q(location__icontains=search_keyword)
             )
-        
+
+        if category_filter:
+            tasks = tasks.filter(category=category_filter)
+
         if start_date:
             tasks = tasks.filter(date__gte=start_date)
         if end_date:
