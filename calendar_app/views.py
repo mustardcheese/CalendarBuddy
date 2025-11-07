@@ -44,7 +44,11 @@ def calendar_view(request):
     
     # Handle search and filters
     search_form = CalendarSearchForm(request.GET or None)
-    tasks = Task.objects.filter(user=request.user)
+    # Get tasks assigned to user OR to groups the user is a member of
+    tasks = Task.objects.filter(
+        Q(user=request.user) |
+        Q(group__memberships__user=request.user)
+    ).distinct()
     
     if search_form.is_valid():
         search_keyword = search_form.cleaned_data.get('search')
@@ -105,7 +109,11 @@ def calendar_view(request):
 
 @login_required
 def delete_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id, user=request.user)
+    # Get task that belongs to user OR their groups
+    task = get_object_or_404(
+        Task,
+        Q(id=task_id) & (Q(user=request.user) | Q(group__memberships__user=request.user))
+    )
     if request.method == 'POST':
         # Check if task can be deleted (respects is_deletable for assigned tasks)
         if task.can_be_deleted_by(request.user):
@@ -159,11 +167,11 @@ def user_page(request):
     start_of_week = today - timedelta(days=today.weekday())  # Monday
     end_of_week = start_of_week + timedelta(days=6)  # Sunday
 
-    # Filter tasks for the current user within this week
+    # Filter tasks for the current user OR groups they're in, within this week
     weekly_tasks = Task.objects.filter(
-        user=request.user,
+        Q(user=request.user) | Q(group__memberships__user=request.user),
         date__range=[start_of_week, end_of_week]
-    ).order_by('date')
+    ).distinct().order_by('date')
 
     weather = get_weather(33.7756,-84.3963) 
     context = {

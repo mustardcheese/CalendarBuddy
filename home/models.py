@@ -55,7 +55,14 @@ class Task(models.Model):
         ('orange', 'Orange'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        null=True,
+        blank=True,
+        help_text="User this task is assigned to (leave empty if assigning to a group)"
+    )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     date = models.DateField()
@@ -79,7 +86,7 @@ class Task(models.Model):
         null=True,
         blank=True,
         related_name='tasks',
-        help_text="Group this task was assigned from"
+        help_text="Group this task was assigned to (leave empty if assigning to a user)"
     )
     is_deletable = models.BooleanField(
         default=True,

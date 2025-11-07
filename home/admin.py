@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.contrib.auth.models import Group as DjangoGroup
+from django.core.exceptions import ValidationError
+from django import forms
 from .models import Task, Group, GroupMembership
 
 # Register your models here.
@@ -8,6 +11,10 @@ class GroupMembershipInline(admin.TabularInline):
     model = GroupMembership
     extra = 1
     autocomplete_fields = ['user']
+
+
+# Unregister Django's built-in Group model to remove it from auth section
+admin.site.unregister(DjangoGroup)
 
 
 @admin.register(Group)
@@ -29,8 +36,28 @@ class GroupMembershipAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'group__name']
 
 
+class TaskAdminForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        group = cleaned_data.get('group')
+
+        if user and group:
+            raise ValidationError('A task can be assigned to either a user OR a group, not both.')
+
+        if not user and not group:
+            raise ValidationError('A task must be assigned to either a user or a group.')
+
+        return cleaned_data
+
+
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
+    form = TaskAdminForm
     list_display = ['title', 'user', 'date', 'group', 'assigned_by', 'is_deletable', 'created_at']
     list_filter = ['date', 'color', 'is_deletable', 'group']
     search_fields = ['title', 'description', 'user__username']
@@ -39,12 +66,9 @@ class TaskAdmin(admin.ModelAdmin):
         ('Basic Information', {
             'fields': ('title', 'description', 'date', 'location', 'color')
         }),
-        ('User Assignment', {
-            'fields': ('user',)
-        }),
-        ('Group Assignment', {
-            'fields': ('group', 'assigned_by', 'is_deletable'),
-            'description': 'If this task was assigned by a group admin'
+        ('Assignment', {
+            'fields': ('user', 'group', 'assigned_by', 'is_deletable'),
+            'description': 'Assign to EITHER a user OR a group (not both)'
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
