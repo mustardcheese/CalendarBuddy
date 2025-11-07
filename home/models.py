@@ -55,6 +55,15 @@ class Task(models.Model):
         ('orange', 'Orange'),
     ]
 
+    CATEGORY_CHOICES = [
+        ('work', 'Work'),
+        ('personal', 'Personal'),
+        ('school', 'School'),
+        ('health', 'Health'),
+        ('social', 'Social'),
+        ('other', 'Other'),
+    ]
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -68,6 +77,7 @@ class Task(models.Model):
     date = models.DateField()
     location = models.CharField(max_length=200, blank=True)
     color = models.CharField(max_length=20, choices=COLOR_CHOICES, default='blue')
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
