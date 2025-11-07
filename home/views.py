@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 from calendar_app.models import Task
 from .forms import UserUpdateForm
+from django.urls import reverse
 
 
 def index(request):
@@ -31,29 +32,33 @@ def signup_view(request):
 
 
 def login_view(request):
-    """User login view"""
+    # If already logged in, don’t show login page
+    if request.user.is_authenticated:
+        return redirect("calendar_app:user_page")
+
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get("username")
-            password = form.cleaned_data.get("password")
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Welcome back, {username}!")
-                return redirect("home")
+            user = form.get_user()
+            login(request, user)
+            next_url = (
+                request.POST.get("next")
+                or request.GET.get("next")
+                or reverse("calendar_app:user_page")
+            )
+            return redirect(next_url)
         else:
             messages.error(request, "Invalid username or password.")
     else:
-        form = AuthenticationForm()
+        form = AuthenticationForm(request)
+
     return render(request, "home/login.html", {"form": form})
 
 
 def logout_view(request):
-    """User logout view"""
+    # If you prefer POST only, check request.method == 'POST' here
     logout(request)
-    messages.success(request, "You have been logged out successfully.")
-    return redirect("home")
+    return redirect("home")  # or 'calendar_app:user_page'
 
 
 @login_required
