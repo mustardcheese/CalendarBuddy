@@ -1,0 +1,81 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Add Member to {{ group.name }} - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">Add Member to {{ group.name }}</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="alert-container mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   placeholder="Enter username" required list="users-datalist">
+                            <datalist id="users-datalist">
+                                {% for user in available_users %}
+                                <option value="{{ user.username }}">{{ user.get_full_name|default:user.username }}</option>
+                                {% endfor %}
+                            </datalist>
+                            <small class="form-text text-muted">Search for a user by username</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="member" selected>Member</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <small class="form-text text-muted">Admins can assign tasks and manage members</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Add Member</button>
+                            <a href="{% url 'group_detail' group.id %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if available_users %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Available Users ({{ available_users.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for user in available_users|slice:":20" %}
+                        <div class="col-md-6 mb-2">
+                            <span class="badge bg-light text-dark">{{ user.username }}</span>
+                        </div>
+                        {% endfor %}
+                        {% if available_users.count > 20 %}
+                        <div class="col-12">
+                            <small class="text-muted">... and {{ available_users.count|add:"-20" }} more</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
-from calendar_app.models import Task
+from .models import Task
 from .forms import UserUpdateForm
 from django.urls import reverse
 
@@ -115,7 +115,6 @@ def account_export_json(request):
             "date",
             "location",
             "color",
-            "category",
             "created_at",
         )
     )

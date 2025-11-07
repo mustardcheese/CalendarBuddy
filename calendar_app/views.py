@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 import requests
 import calendar
-from .models import Task  # Removed EventCategory import
+from home.models import Task  # Use Task from home app
 from .forms import TaskForm, CalendarSearchForm
 
 @login_required
@@ -55,14 +55,10 @@ def calendar_view(request):
         # Apply filters
         if search_keyword:
             tasks = tasks.filter(
-                Q(title__icontains=search_keyword) | 
+                Q(title__icontains=search_keyword) |
                 Q(description__icontains=search_keyword) |
-                Q(location__icontains=search_keyword) |
-                Q(category__icontains=search_keyword)  # FIXED: Added missing pipe character
+                Q(location__icontains=search_keyword)
             )
-        
-        if category_filter:
-            tasks = tasks.filter(category__icontains=category_filter)
         
         if start_date:
             tasks = tasks.filter(date__gte=start_date)
@@ -111,7 +107,12 @@ def calendar_view(request):
 def delete_task(request, task_id):
     task = get_object_or_404(Task, id=task_id, user=request.user)
     if request.method == 'POST':
-        task.delete()
+        # Check if task can be deleted (respects is_deletable for assigned tasks)
+        if task.can_be_deleted_by(request.user):
+            task.delete()
+        else:
+            # Can add a message here if desired
+            pass
         return redirect('calendar_app:calendar_view')
     return redirect('calendar_app:calendar_view')
 

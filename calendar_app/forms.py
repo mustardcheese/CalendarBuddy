@@ -1,10 +1,10 @@
 from django import forms
-from .models import Task
+from home.models import Task
 
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'date', 'location', 'color', 'category']
+        fields = ['title', 'description', 'date', 'location', 'color']
         widgets = {
             'title': forms.TextInput(attrs={  # Changed from Textarea to TextInput
                 'class': 'form-control form-control-sm',
@@ -25,10 +25,6 @@ class TaskForm(forms.ModelForm):
             }),
             'color': forms.Select(attrs={
                 'class': 'form-select form-select-sm'
-            }),
-            'category': forms.TextInput(attrs={
-                'class': 'form-control form-control-sm',
-                'placeholder': 'Enter category...'
             }),
         }
 

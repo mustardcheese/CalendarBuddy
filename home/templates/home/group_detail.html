@@ -1,0 +1,116 @@
+{% extends 'home/base.html' %}
+
+{% block title %}{{ group.name }} - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ group.name }}</h1>
+            {% if group.description %}
+            <p class="lead">{{ group.description }}</p>
+            {% endif %}
+            <p class="text-muted">
+                Created by {{ group.created_by.username }} on {{ group.created_at|date:"M d, Y" }}
+            </p>
+        </div>
+        <div class="col-auto">
+            {% if is_admin %}
+            <a href="{% url 'assign_task' group.id %}" class="btn btn-primary">
+                Assign Task
+            </a>
+            <a href="{% url 'group_add_member' group.id %}" class="btn btn-success">
+                Add Member
+            </a>
+            {% endif %}
+            <a href="{% url 'group_list' %}" class="btn btn-secondary">
+                Back to Groups
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Members ({{ memberships.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for m in memberships %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ m.user.username }}</strong>
+                                {% if m.user.get_full_name %}
+                                <br><small class="text-muted">{{ m.user.get_full_name }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge {% if m.role == 'admin' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ m.get_role_display }}
+                                </span>
+                                {% if is_admin and m.user != group.created_by %}
+                                <form method="post" action="{% url 'group_remove_member' group.id m.user.id %}"
+                                      onsubmit="return confirm('Remove {{ m.user.username }} from this group?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Remove
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Assigned Tasks</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_tasks %}
+                    <div class="list-group">
+                        {% for task in recent_tasks %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ task.title }}</h6>
+                                <small class="text-muted">{{ task.date|date:"M d" }}</small>
+                            </div>
+                            <small class="text-muted">
+                                Assigned to: {{ task.user.username }}
+                                {% if task.assigned_by %}
+                                by {{ task.assigned_by.username }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No tasks assigned yet.</p>
+                    {% if is_admin %}
+                    <a href="{% url 'assign_task' group.id %}" class="btn btn-sm btn-primary">
+                        Assign First Task
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
