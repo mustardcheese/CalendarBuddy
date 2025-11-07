@@ -1,0 +1,38 @@
+{% extends "home/base.html" %}
+{% block content %}
+<div class="container" style="max-width: 900px;">
+    <h2 class="mb-3">My Account</h2>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Profile</h5>
+            <p><strong>Username:</strong> {{ user_obj.username }}</p>
+            <p><strong>Name:</strong> {{ user_obj.first_name }} {{ user_obj.last_name }}</p>
+            <p><strong>Email:</strong> {{ user_obj.email }}</p>
+            <p><strong>Joined:</strong> {{ user_obj.date_joined }}</p>
+            <p><strong>Last login:</strong> {{ user_obj.last_login }}</p>
+            <a class="btn btn-primary" href="{% url 'account_edit' %}">Edit Profile</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Calendar Summary</h5>
+            <ul class="mb-3">
+                <li><strong>Total tasks:</strong> {{ total_tasks }}</li>
+                <li><strong>This month:</strong> {{ this_month }}</li>
+                <li><strong>This week ({{ start_week }} – {{ end_week }}):</strong> {{ weekly_count }}</li>
+            </ul>
+            <h6>Upcoming (next 5)</h6>
+            <ul>
+                {% for t in upcoming %}
+                <li><strong>{{ t.date }}</strong> — {{ t.title }}{% if t.location %} ({{ t.location }}){% endif %}</li>
+                {% empty %}
+                <li>No upcoming items.</li>
+                {% endfor %}
+            </ul>
+            <a class="btn btn-link p-0" href="{% url 'calendar_app:calendar_view' %}">Open full calendar →</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
