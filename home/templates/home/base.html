@@ -39,6 +39,13 @@
                         <a class="nav-link {% if request.resolver_match.url_name == 'user_page' %}active{% endif %}"
                             href="{% url 'calendar_app:user_page' %}">Overview</a>
                     </li>
+                    
+                    <!-- NEW: Documents Link -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'document' in request.resolver_match.url_name %}active{% endif %}"
+                            href="{% url 'calendar_app:document_list' %}">Documents</a>
+                    </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link {% if 'group' in request.resolver_match.url_name %}active{% endif %}"
                             href="{% url 'group_list' %}">Groups</a>
@@ -55,8 +62,17 @@
                     <li class="nav-item">
                         <span class="nav-link">Welcome, {{ user.username }}</span>
                     </li>
+                    
+                    <!-- Optional: Quick Upload Button - removed if you don't want it -->
+                    <!-- 
                     <li class="nav-item">
-                        <a href="#" class="nav-link"
+                        <a class="nav-link btn btn-sm btn-outline-primary mx-2" 
+                           href="{% url 'calendar_app:upload_document' %}">Upload</a>
+                    </li>
+                    -->
+                    
+                    <li class="nav-item">
+                        <a href="#" class="nav-link text-danger"
                             onclick="document.getElementById('logout-form').submit(); return false;">
                             Logout
                         </a>
@@ -78,8 +94,20 @@
         </div>
     </nav>
 
+    <!-- Messages/Alerts - Important to keep for feedback -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Main Content -->
-    <main>
+    <main class="container py-4">
         {% block content %}{% endblock %}
     </main>
 
@@ -88,10 +116,10 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <p class="mb-0">About Us</p>
+                    <p class="mb-0">CalendarBuddy - Your Personal Calendar Assistant</p>
                 </div>
-                <div class="col-md-6">
-                    <p class="mb-0">Contact</p>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">Contact: support@calendarbuddy.com</p>
                 </div>
             </div>
         </div>

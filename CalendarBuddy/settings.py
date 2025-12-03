@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os  # Add this import
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -64,6 +65,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.media",  # Add this line
             ],
         },
     },
@@ -121,6 +123,20 @@ STATIC_URL = "static/"
 
 # Directory where collectstatic will collect static files for deployment
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (User uploaded files)
+# ============ ADD THESE LINES ============
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+# =========================================
+
+# File upload settings
+# ============ ADD THESE LINES ============
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_TEMP_DIR = BASE_DIR / 'tmp'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+# =========================================
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
