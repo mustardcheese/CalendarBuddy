@@ -25,9 +25,6 @@
                 <a href="?month=11&year={{ year }}" class="list-group-item list-group-item-action {% if month == 11 %}active{% endif %}">November</a>
                 <a href="?month=12&year={{ year }}" class="list-group-item list-group-item-action {% if month == 12 %}active{% endif %}">December</a>
             </div>
-
-            <!-- FILTER SECTION REMOVED -->
-            
         </div>
 
         <!-- Main Calendar -->
@@ -65,6 +62,8 @@
                                                          data-task-id="{{ task.id }}"
                                                          data-title="{{ task.title }}"
                                                          data-date="{{ task.date|date:'M d, Y' }}"
+                                                         data-start-time="{% if task.start_time %}{{ task.start_time|time:'g:i A' }}{% endif %}"
+                                                         data-end-time="{% if task.end_time %}{{ task.end_time|time:'g:i A' }}{% endif %}"
                                                          data-location="{{ task.location }}"
                                                          data-description="{{ task.description }}"
                                                          data-color="{{ task.color }}"
@@ -76,26 +75,25 @@
                                                          data-delete-url="{% url 'calendar_app:delete_task' task.id %}"
                                                          style="cursor: pointer;">
 
-                                                        <!-- Display Title and Location -->
+                                                        <!-- Display Title, Time, and Location -->
                                                         <div class="task-content">
                                                             {% if task.is_assigned_task %}<span class="assigned-badge">📋</span>{% endif %}
                                                             <small class="task-title">{{ task.title|truncatechars:15 }}</small>
+                                                            {% if task.start_time %}
+                                                                <br><small class="task-time">🕐 {{ task.start_time|time:'g:i A' }}</small>
+                                                            {% endif %}
                                                             {% if task.location %}
-                                                                <br><small class="task-location">{{ task.location|truncatechars:12 }}</small>
+                                                                <br><small class="task-location">📍 {{ task.location|truncatechars:12 }}</small>
                                                             {% endif %}
                                                         </div>
 
-                                                        <!-- Delete Button (only show if deletable) -->
-                                                        {% if task.can_be_deleted_by %}
+                                                        <!-- Delete Button -->
                                                         <form method="post" action="{% url 'calendar_app:delete_task' task.id %}"
                                                               class="delete-form" onclick="event.stopPropagation();">
                                                             {% csrf_token %}
                                                             <button type="submit" class="btn-delete-task"
                                                                     onclick="return confirm('Are you sure?')">&times;</button>
                                                         </form>
-                                                        {% else %}
-                                                        <span class="task-locked" title="This task cannot be deleted">🔒</span>
-                                                        {% endif %}
                                                     </div>
                                                 {% endfor %}
                                             </div>
@@ -121,19 +119,16 @@
                         <input type="hidden" name="month" value="{{ month }}">
                         <input type="hidden" name="year" value="{{ year }}">
                         
-                        <!-- Keyword Search -->
                         <div class="mb-2">
                             <label class="form-label small">Keyword:</label>
                             {{ search_form.search }}
                         </div>
                         
-                        <!-- Category Filter -->
                         <div class="mb-2">
                             <label class="form-label small">Category:</label>
                             {{ search_form.category }}
                         </div>
                         
-                        <!-- Date Range -->
                         <div class="mb-2">
                             <label class="form-label small">From Date:</label>
                             {{ search_form.start_date }}
@@ -167,30 +162,29 @@
                         {% csrf_token %}
                         <input type="hidden" name="add_task" value="true">
                         
-                        <!-- Task Title -->
                         <div class="mb-2">
                             <label class="form-label small">Task Title:</label>
                             {{ task_form.title }}
-                            {% if task_form.title.errors %}
-                            <div class="text-danger small">{{ task_form.title.errors }}</div>
-                            {% endif %}
                         </div>
                         
-                        <!-- Task Description -->
                         <div class="mb-2">
                             <label class="form-label small">Description:</label>
                             {{ task_form.description }}
-                            {% if task_form.description.errors %}
-                            <div class="text-danger small">{{ task_form.description.errors }}</div>
-                            {% endif %}
                         </div>
                         
                         <div class="mb-2">
                             <label class="form-label small">Date:</label>
                             {{ task_form.date }}
-                            {% if task_form.date.errors %}
-                            <div class="text-danger small">{{ task_form.date.errors }}</div>
-                            {% endif %}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">Start Time:</label>
+                            {{ task_form.start_time }}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">End Time:</label>
+                            {{ task_form.end_time }}
                         </div>
                         
                         <div class="mb-2">
@@ -230,9 +224,7 @@
                         <p><strong>Date:</strong><br><span id="taskModalDate"></span></p>
                     </div>
                     <div class="col-6">
-                        <p><strong>Color:</strong>
-                            <span id="taskModalColor" class="badge"></span>
-                        </p>
+                        <p><strong>Time:</strong><br><span id="taskModalTime"></span></p>
                     </div>
                 </div>
                 <div class="row">
@@ -240,19 +232,20 @@
                         <p><strong>Category:</strong><br><span id="taskModalCategory"></span></p>
                     </div>
                     <div class="col-6">
-                        <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
+                        <p><strong>Color:</strong>
+                            <span id="taskModalColor" class="badge"></span>
+                        </p>
                     </div>
                 </div>
+                <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
                 <p><strong>Description:</strong><br><span id="taskModalDescription"></span></p>
 
-                <!-- Assigned Task Information -->
                 <div id="taskModalAssignedInfo" style="display: none;">
                     <hr>
                     <div class="alert alert-info mb-0">
                         <h6>📋 Assigned Task</h6>
                         <p class="mb-1"><strong>Assigned by:</strong> <span id="taskModalAssignedBy"></span></p>
-                        <p class="mb-1"><strong>Group:</strong> <span id="taskModalGroup"></span></p>
-                        <p class="mb-0" id="taskModalDeletableInfo"></p>
+                        <p class="mb-0"><strong>Group:</strong> <span id="taskModalGroup"></span></p>
                     </div>
                 </div>
             </div>
@@ -270,200 +263,89 @@
 </div>
 
 <style>
-    .calendar-table {
-        table-layout: fixed;
-    }
-
-    .calendar-day {
-        height: 120px;
-        vertical-align: top;
-        padding: 5px;
-        position: relative;
-    }
-
-    .empty-day {
-        background-color: #f8f9fa;
-    }
-
-    .day-number {
-        font-weight: bold;
-        margin-bottom: 5px;
-        font-size: 14px;
-    }
-
-    .tasks-container {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-    }
-
-    .task-item {
-        padding: 3px 5px;
-        border-radius: 3px;
-        font-size: 11px;
-        cursor: pointer;
-        position: relative;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 2px;
-    }
-
-    .task-content {
-        flex-grow: 1;
-    }
-
-    .task-title {
-        font-weight: bold;
-        display: block;
-    }
-
-    .task-location {
-        color: #666;
-        font-size: 9px;
-        display: block;
-        margin-top: -1px;
-    }
-
-    .btn-delete-task {
-        background: rgba(0, 0, 0, 0.2);
-        border: none;
-        border-radius: 3px;
-        width: 16px;
-        height: 16px;
-        padding: 0;
-        font-size: 12px;
-        line-height: 1;
-        cursor: pointer;
-        flex-shrink: 0;
-        margin-left: 5px;
-    }
-
-    .btn-delete-task:hover {
-        background: rgba(0, 0, 0, 0.3);
-    }
-
-    .delete-form {
-        display: inline;
-        margin: 0;
-        padding: 0;
-    }
-
+    .calendar-table { table-layout: fixed; }
+    .calendar-day { height: 120px; vertical-align: top; padding: 5px; position: relative; }
+    .empty-day { background-color: #f8f9fa; }
+    .day-number { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+    .tasks-container { display: flex; flex-direction: column; gap: 3px; }
+    .task-item { padding: 3px 5px; border-radius: 3px; font-size: 11px; cursor: pointer; position: relative; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+    .task-content { flex-grow: 1; }
+    .task-title { font-weight: bold; display: block; }
+    .task-time { color: #444; font-size: 9px; display: block; }
+    .task-location { color: #666; font-size: 9px; display: block; }
+    .btn-delete-task { background: rgba(0, 0, 0, 0.2); border: none; border-radius: 3px; width: 16px; height: 16px; padding: 0; font-size: 12px; line-height: 1; cursor: pointer; flex-shrink: 0; margin-left: 5px; }
+    .btn-delete-task:hover { background: rgba(0, 0, 0, 0.3); }
+    .delete-form { display: inline; margin: 0; padding: 0; }
     .task-blue { background-color: #cfe2ff; border-left: 3px solid #0d6efd; }
     .task-green { background-color: #d1e7dd; border-left: 3px solid #198754; }
     .task-red { background-color: #f8d7da; border-left: 3px solid #dc3545; }
     .task-yellow { background-color: #fff3cd; border-left: 3px solid #ffc107; }
     .task-purple { background-color: #e2d9f3; border-left: 3px solid #6f42c1; }
     .task-orange { background-color: #ffe5d0; border-left: 3px solid #fd7e14; }
-
-    /* Assigned task styling */
-    .assigned-task {
-        border: 2px dashed #6c757d;
-        border-left: 3px solid #0d6efd !important;
-        background-image: linear-gradient(45deg, rgba(0,0,0,.05) 25%, transparent 25%, transparent 50%, rgba(0,0,0,.05) 50%, rgba(0,0,0,.05) 75%, transparent 75%, transparent);
-        background-size: 10px 10px;
-    }
-
-    .assigned-badge {
-        font-size: 10px;
-        margin-right: 2px;
-    }
-
-    .task-locked {
-        font-size: 10px;
-        margin-left: 5px;
-    }
-
-    .list-group-item {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.9rem;
-    }
+    .assigned-task { border: 2px dashed #6c757d; }
+    .assigned-badge { font-size: 10px; margin-right: 2px; }
+    .list-group-item { padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+    .alert-warning { background-color: #fff3cd; border-color: #ffecb5; color: #664d03; }
 </style>
 
 <script>
-    // Task Modal functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
-        
-        // Add click event to all task items
-        document.querySelectorAll('.task-item').forEach(function(taskItem) {
-            taskItem.addEventListener('click', function(event) {
-                // Don't trigger modal if delete button was clicked
-                if (event.target.closest('.delete-form')) {
-                    return;
-                }
-                
-                // Get task data from data attributes
-                const taskId = this.dataset.taskId;
-                const title = this.dataset.title;
-                const date = this.dataset.date;
-                const location = this.dataset.location || 'Not specified';
-                const description = this.dataset.description || 'No description';
-                const color = this.dataset.color;
-                const category = this.dataset.category || 'Not specified';
-                const deleteUrl = this.dataset.deleteUrl;
-                const isAssigned = this.dataset.isAssigned === 'True';
-                const assignedBy = this.dataset.assignedBy;
-                const group = this.dataset.group;
-                const isDeletable = this.dataset.isDeletable === 'True';
+document.addEventListener('DOMContentLoaded', function() {
+    const taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
+    
+    document.querySelectorAll('.task-item').forEach(function(taskItem) {
+        taskItem.addEventListener('click', function(event) {
+            if (event.target.closest('.delete-form')) return;
+            
+            const title = this.dataset.title;
+            const date = this.dataset.date;
+            const startTime = this.dataset.startTime;
+            const endTime = this.dataset.endTime;
+            const location = this.dataset.location || 'Not specified';
+            const description = this.dataset.description || 'No description';
+            const color = this.dataset.color;
+            const category = this.dataset.category || 'Not specified';
+            const deleteUrl = this.dataset.deleteUrl;
+            const isAssigned = this.dataset.isAssigned === 'True';
+            const assignedBy = this.dataset.assignedBy;
+            const group = this.dataset.group;
 
-                // Populate modal with task data
-                document.getElementById('taskModalTitle').textContent = title;
-                document.getElementById('taskModalDate').textContent = date;
-                document.getElementById('taskModalLocation').textContent = location;
-                document.getElementById('taskModalCategory').textContent = category;
-                document.getElementById('taskModalDescription').textContent = description;
+            document.getElementById('taskModalTitle').textContent = title;
+            document.getElementById('taskModalDate').textContent = date;
+            document.getElementById('taskModalLocation').textContent = location;
+            document.getElementById('taskModalCategory').textContent = category;
+            document.getElementById('taskModalDescription').textContent = description;
 
-                // Set color badge
-                const colorBadge = document.getElementById('taskModalColor');
-                colorBadge.textContent = color.charAt(0).toUpperCase() + color.slice(1);
-                colorBadge.className = 'badge';
-                colorBadge.classList.add('bg-' + getColorClass(color));
+            const timeDisplay = document.getElementById('taskModalTime');
+            if (startTime && endTime) {
+                timeDisplay.textContent = startTime + ' - ' + endTime;
+            } else if (startTime) {
+                timeDisplay.textContent = startTime;
+            } else {
+                timeDisplay.textContent = 'All day';
+            }
 
-                // Handle assigned task information
-                const assignedInfo = document.getElementById('taskModalAssignedInfo');
-                if (isAssigned) {
-                    document.getElementById('taskModalAssignedBy').textContent = assignedBy;
-                    document.getElementById('taskModalGroup').textContent = group;
-                    const deletableInfo = document.getElementById('taskModalDeletableInfo');
-                    if (isDeletable) {
-                        deletableInfo.innerHTML = '<small class="text-muted">You can delete this task if needed.</small>';
-                    } else {
-                        deletableInfo.innerHTML = '<strong>🔒 This task cannot be deleted (required by admin)</strong>';
-                    }
-                    assignedInfo.style.display = 'block';
-                } else {
-                    assignedInfo.style.display = 'none';
-                }
+            const colorBadge = document.getElementById('taskModalColor');
+            colorBadge.textContent = color.charAt(0).toUpperCase() + color.slice(1);
+            colorBadge.className = 'badge bg-' + getColorClass(color);
 
-                // Update delete button visibility
-                const deleteButton = document.getElementById('taskModalDeleteButton');
-                if (!isDeletable && isAssigned) {
-                    deleteButton.style.display = 'none';
-                } else {
-                    deleteButton.style.display = 'inline-block';
-                }
+            const assignedInfo = document.getElementById('taskModalAssignedInfo');
+            if (isAssigned) {
+                document.getElementById('taskModalAssignedBy').textContent = assignedBy;
+                document.getElementById('taskModalGroup').textContent = group;
+                assignedInfo.style.display = 'block';
+            } else {
+                assignedInfo.style.display = 'none';
+            }
 
-                // Update delete form action
-                document.getElementById('taskModalDeleteForm').action = deleteUrl;
-
-                // Show modal
-                taskModal.show();
-            });
+            document.getElementById('taskModalDeleteForm').action = deleteUrl;
+            taskModal.show();
         });
     });
-    
-    // Helper function to map color names to Bootstrap classes
-    function getColorClass(color) {
-        const colorMap = {
-            'blue': 'primary',
-            'green': 'success',
-            'red': 'danger',
-            'yellow': 'warning',
-            'purple': 'info',
-            'orange': 'warning'
-        };
-        return colorMap[color] || 'secondary';
-    }
+});
+
+function getColorClass(color) {
+    const colorMap = { 'blue': 'primary', 'green': 'success', 'red': 'danger', 'yellow': 'warning', 'purple': 'info', 'orange': 'warning' };
+    return colorMap[color] || 'secondary';
+}
 </script>
 {% endblock %}
