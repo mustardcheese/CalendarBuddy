@@ -177,7 +177,8 @@ def user_page(request):
     # Filter tasks for the user OR group tasks
     weekly_tasks = Task.objects.filter(
         Q(user=request.user) | Q(group__memberships__user=request.user),
-        date__range=[start_of_week, end_of_week]
+        date__range=[start_of_week, end_of_week],
+        completed=False
     ).distinct().order_by('date')
 
     # ---------- BUILD MAP MARKERS ----------
@@ -226,6 +227,14 @@ def user_page(request):
 
     return render(request, 'calendar_app/user_page.html', context)
 
+def complete_task(request, task_id):
+    task = get_object_or_404(
+        Task,
+        Q(id=task_id) & (Q(user=request.user) | Q(group__memberships__user=request.user))
+    )
+    task.completed = True
+    task.save()
+    return redirect('calendar_app:user_page')
 # ================== DOCUMENT VIEWS ==================
 
 @login_required

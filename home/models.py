@@ -80,6 +80,7 @@ class Task(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    completed = models.BooleanField(default=False)
 
     # Task assignment fields
     assigned_by = models.ForeignKey(

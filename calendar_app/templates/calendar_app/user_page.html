@@ -14,11 +14,18 @@
 
         <!-- Left column: Weekly tasks -->
         <div class="task-box" style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-            <h5>Your Tasks This Week</h5>
+            <h5>Your Tasks To Complete This Week</h5>
             {% if weekly_tasks %}
                 <div class="tasks-list">
                     {% for task in weekly_tasks %}
-                        <div class="task-card bg-{{ task.color }}">
+                    <div class="task-row" style="display: flex; align-items: center; gap: 10px;">
+
+                    <form action="{% url 'calendar_app:complete_task' task.id %}" method="POST" class="mb-2">
+                                {% csrf_token %}
+                                <input type="checkbox" class="task-checkbox" onchange="this.form.submit()">
+                            </form>
+
+                        <div class="task-card bg-{{ task.color }}" style="flex: 1;">
                             <div class="task-header">
                                 <h6>{{ task.title }}</h6>
                                 <small>{{ task.date|date:"D, M j" }}</small>
@@ -36,6 +43,7 @@
                                 <p class="task-location">📍 {{ task.location }}</p>
                             {% endif %}
                         </div>
+                    </div>
                     {% endfor %}
                 </div>
             {% else %}
@@ -136,6 +144,11 @@ markers.forEach(task => {
     color: #555;
 }
 
+.task-checkbox {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
 .weather-temp {
     font-size: 2em;
     font-weight: bold;

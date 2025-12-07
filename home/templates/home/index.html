@@ -4,43 +4,73 @@
 
 {% block content %}
 <div class="container mt-5">
+
+    <!-- Fun Header -->
+    <div class="text-center mb-5">
+        <h1 style="color: #000000; font-weight: bold;">Welcome to CalendarBuddy</h1>
+        <p style="font-size: 1.2rem; color: #6c757d;">Where procrastination meets its match… and your week actually makes sense.</p>
+    </div>
+
     <div class="row">
+
         <!-- Left Column: How to Get Started -->
-        <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                    <h3 class="card-title">How to get started</h3>
-                    <div class="flex-grow-1"></div>
-                    <a href="#" class="btn btn-outline-secondary mt-3">FAQ's</a>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm bg-blue">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <h3 class="card-title">🚀 How To Get Started</h3>
+                    <p>Sign up, add your tasks, plan group projects, and watch CalendarBuddy magically organize your chaos into a manageable week!</p>
+                    <a href="{% url 'signup' %}" class="btn btn-primary mt-3 align-self-center">Join Today</a>
                 </div>
             </div>
         </div>
 
-        <!-- Middle Column: Interactive Map -->
-        <div class="col-md-5 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                    <div class="interactive-map-placeholder border rounded p-4 mb-3 flex-grow-1 d-flex align-items-center justify-content-center">
-                        <p class="text-center text-muted mb-0">Interactive Map showing<br>all users who<br>use the platform</p>
-                    </div>
-                    <a href="#" class="btn btn-primary">Join Today</a>
+        <!-- Right Column: Why CalendarBuddy -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm bg-green">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <h3 class="card-title">🎯 Why CalendarBuddy?</h3>
+                    <ul style="list-style: none; padding-left: 0; font-size: 1rem;">
+                        <li>- Keep track of tasks and events on a color coded calendar</li>
+                        <li>- Easy collaboration with others for workers and employers</li>
+                        <li>- Organize schedules with location mapping and weather advisory</li>
+                    </ul>
+                    <a href="{% url 'calendar_app:user_page' %}" class="btn btn-outline-secondary mt-5 align-self-center">Check It Out</a>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Sample Images -->
-        <div class="col-md-3 mb-4">
-            <div class="d-flex flex-column h-100">
-                <div class="card shadow-sm mb-3">
-                    <div class="card-body text-center">
-                        <p class="mb-0">Sample<br>image #1</p>
-                    </div>
-                </div>
-                <div class="card shadow-sm">
-                    <div class="card-body text-center">
-                        <p class="mb-0">Sample<br>image #2</p>
-                    </div>
-                </div>
+    </div>
+
+    <!-- Highlight Sample Tasks (Optional Fun Section) -->
+    <div class="row mt-4">
+        <div class="col-12 text-center mb-4">
+            <h3>Because Your Brain Deserves A Friend</h3>
+            <p style="color: #6c757d;">CalendarBuddy lets you see your tasks at a glance</p>
+        </div>
+
+        {% comment %} Example of colorful task cards {% endcomment %}
+        <div class="col-md-3 mb-3">
+            <div class="card bg-purple shadow-sm p-3">
+                <h5>Team Meeting</h5>
+                <small>Mon 10 AM</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-orange shadow-sm p-3">
+                <h5>Workout</h5>
+                <small>Tue 6 PM</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-red shadow-sm p-3">
+                <h5>Project Deadline</h5>
+                <small>Wed 3 PM</small>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-yellow shadow-sm p-3">
+                <h5>Grocery Run</h5>
+                <small>Thu 5 PM</small>
             </div>
         </div>
     </div>
