@@ -10,6 +10,8 @@ from django.contrib import messages
 from home.models import Task  # Use Task from home app
 from .forms import TaskForm, CalendarSearchForm, DocumentUploadForm, DocumentFilterForm
 from .models import Document
+import json
+import urllib.parse
 
 @login_required
 def calendar_view(request):
@@ -172,18 +174,54 @@ def user_page(request):
     start_of_week = today - timedelta(days=today.weekday())  # Monday
     end_of_week = start_of_week + timedelta(days=6)  # Sunday
 
-    # Filter tasks for the current user OR groups they're in, within this week
+    # Filter tasks for the user OR group tasks
     weekly_tasks = Task.objects.filter(
         Q(user=request.user) | Q(group__memberships__user=request.user),
         date__range=[start_of_week, end_of_week]
     ).distinct().order_by('date')
 
-    weather = get_weather(33.7756,-84.3963) 
+    # ---------- BUILD MAP MARKERS ----------
+    markers = []
+
+    for task in weekly_tasks:
+        if task.location and task.location.strip():
+            try:
+                query = urllib.parse.quote(task.location)
+                url = (
+                    f"https://nominatim.openstreetmap.org/search"
+                    f"?q={query}&format=json&limit=1"
+                )
+                headers = {"User-Agent": "calendar_buddy_app"}
+
+                r = requests.get(url, headers=headers, timeout=5)
+                data = r.json()
+
+                if data:
+                    lat = float(data[0]["lat"])
+                    lon = float(data[0]["lon"])
+
+                    markers.append({
+                        "title": task.title,
+                        "location": task.location,
+                        "lat": lat,
+                        "lon": lon,
+                        "date": str(task.date),
+                    })
+
+            except Exception as e:
+                print("GEOCODING ERROR:", e)
+
+    markers_json = json.dumps(markers)
+
+    # ---------- WEATHER ----------
+    weather = get_weather(33.7756, -84.3963)
+
     context = {
         'weekly_tasks': weekly_tasks,
         'start_of_week': start_of_week,
         'end_of_week': end_of_week,
         'weather': weather,
+        'markers_json': markers_json,  # ← CRITICAL
     }
 
     return render(request, 'calendar_app/user_page.html', context)
