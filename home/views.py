@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
-from calendar_app.models import Task
+from .models import Task
 from .forms import UserUpdateForm
 from django.urls import reverse
 
@@ -66,12 +66,17 @@ def account_dashboard(request):
     user = request.user
     today = timezone.now().date()
 
-    tasks_qs = Task.objects.filter(user=user).order_by("date", "created_at")
+    # Get tasks assigned to user OR to groups the user is a member of
+    from django.db.models import Q
+    tasks_qs = Task.objects.filter(
+        Q(user=user) | Q(group__memberships__user=user)
+    ).distinct().order_by("date", "created_at")
+
     upcoming = tasks_qs.filter(date__gte=today)[:5]
     total_tasks = tasks_qs.count()
     this_month = tasks_qs.filter(date__month=today.month, date__year=today.year).count()
 
-    # Simple “next week” window
+    # Simple "next week" window
     start_week = today - timedelta(days=today.weekday())
     end_week = start_week + timedelta(days=6)
     weekly = tasks_qs.filter(date__range=[start_week, end_week])
@@ -104,9 +109,14 @@ def account_edit(request):
 @login_required
 def account_export_json(request):
     """Export ALL user-specific data (profile + tasks) as JSON."""
+    from django.db.models import Q
     user = request.user
+    # Export tasks assigned to user OR to groups the user is a member of
     tasks = list(
-        Task.objects.filter(user=user)
+        Task.objects.filter(
+            Q(user=user) | Q(group__memberships__user=user)
+        )
+        .distinct()
         .order_by("date", "created_at")
         .values(
             "id",
@@ -115,7 +125,6 @@ def account_export_json(request):
             "date",
             "location",
             "color",
-            "category",
             "created_at",
         )
     )

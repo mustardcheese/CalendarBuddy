@@ -1,0 +1,258 @@
+{% extends 'home/base.html' %}
+
+{% block title %}My Documents - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Documents</h2>
+        <a href="{% url 'calendar_app:upload_document' %}" class="btn btn-primary">
+            + Upload New
+        </a>
+    </div>
+    
+    <!-- Filter Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Filter Documents</h5>
+            <form method="get" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Search by Tag</label>
+                    {{ filter_form.tag }}
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Filter by Task</label>
+                    {{ filter_form.task }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="{% url 'calendar_app:document_list' %}" class="btn btn-outline-secondary w-100">
+                        Clear Filters
+                    </a>
+                </div>
+            </form>
+            
+            <!-- Quick Tag Filters -->
+            {% if all_tags %}
+            <div class="mt-3">
+                <small class="text-muted">Quick filters:</small>
+                {% for tag in all_tags|slice:":10" %}
+                    <a href="?tag={{ tag }}" class="badge bg-secondary text-decoration-none me-1">
+                        {{ tag }}
+                    </a>
+                {% endfor %}
+                {% if all_tags|length > 10 %}
+                    <span class="text-muted">...</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">{{ doc_stats.total }}</h5>
+                    <p class="card-text">Total Documents</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">{{ doc_stats.images }}</h5>
+                    <p class="card-text">Images</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">{{ doc_stats.pdfs }}</h5>
+                    <p class="card-text">PDFs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">{{ doc_stats.documents }}</h5>
+                    <p class="card-text">Other Documents</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Documents Grid -->
+    {% if documents %}
+        <div class="row">
+            {% for doc in documents %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <!-- File Preview/Icon -->
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                             style="height: 200px; overflow: hidden;">
+                            {% if doc.file_type == 'image' %}
+                                <img src="{{ doc.file.url }}" alt="{{ doc.title }}" 
+                                     style="max-height: 100%; max-width: 100%; object-fit: contain; padding: 10px;">
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <div class="display-4 text-muted mb-2">
+                                        {% if doc.file_type == 'pdf' %}📄
+                                        {% elif doc.file_type == 'document' %}📝
+                                        {% elif doc.file_type == 'spreadsheet' %}📊
+                                        {% elif doc.file_type == 'presentation' %}📽️
+                                        {% elif doc.file_type == 'text' %}📄
+                                        {% elif doc.file_type == 'archive' %}📦
+                                        {% else %}📎{% endif %}
+                                    </div>
+                                    <span class="badge bg-secondary">{{ doc.file_type|upper }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ doc.title|truncatechars:40 }}</h5>
+                            
+                            <p class="card-text text-muted small mb-2">
+                                <strong>Size:</strong> {{ doc.get_file_size }}<br>
+                                <strong>Uploaded:</strong> {{ doc.uploaded_at|date:"M d, Y" }}
+                            </p>
+                            
+                            {% if doc.description %}
+                                <p class="card-text small">{{ doc.description|truncatechars:80 }}</p>
+                            {% endif %}
+                            
+                            {% if doc.tags %}
+                                <div class="mb-2">
+                                    {% for tag in doc.tag_list|slice:":3" %}
+                                        <span class="badge bg-light text-dark border me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                    {% if doc.tag_list|length > 3 %}
+                                        <span class="text-muted">+{{ doc.tag_list|length|add:"-3" }} more</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if doc.task %}
+                                <p class="card-text small">
+                                    <strong>Linked to:</strong> {{ doc.task.title }} ({{ doc.task.date }})
+                                </p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer bg-white">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" 
+                                   target="_blank" download>
+                                    Download
+                                </a>
+                                <div>
+                                    <a href="{% url 'calendar_app:document_detail' doc.id %}" 
+                                       class="btn btn-sm btn-outline-secondary me-1">
+                                        View
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ doc.id }}">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Delete Modal -->
+                    <div class="modal fade" id="deleteModal{{ doc.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Confirm Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete "{{ doc.title }}"?
+                                    <p class="text-muted mt-2">This action cannot be undone.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form method="post" action="{% url 'calendar_app:delete_document' doc.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="display-4 text-muted mb-3">📁</div>
+            <h4>No documents found</h4>
+            <p class="text-muted mb-4">Upload your first document to get started!</p>
+            <a href="{% url 'calendar_app:upload_document' %}" class="btn btn-primary btn-lg">
+                Upload Your First Document
+            </a>
+        </div>
+    {% endif %}
+    
+    <!-- Pagination -->
+    {% if documents.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if documents.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.previous_page_number }}&tag={{ request.GET.tag|default:'' }}&task={{ request.GET.task|default:'' }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+            {% endif %}
+            
+            {% for i in documents.paginator.page_range %}
+                {% if documents.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}&tag={{ request.GET.tag|default:'' }}&task={{ request.GET.task|default:'' }}">{{ i }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if documents.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ documents.next_page_number }}&tag={{ request.GET.tag|default:'' }}&task={{ request.GET.task|default:'' }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .card-img-top {
+        border-bottom: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+</style>
+{% endblock %}

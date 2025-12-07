@@ -1,0 +1,226 @@
+{% extends 'home/base.html' %}
+
+{% block title %}{{ document.title }} - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'calendar_app:document_list' %}">Documents</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ document.title|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{{ document.title }}</h3>
+                    <div class="btn-group">
+                        <a href="{{ document.file.url }}" class="btn btn-light btn-sm" download>
+                            Download
+                        </a>
+                        <button type="button" class="btn btn-light btn-sm" 
+                                data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- File Preview -->
+                    <div class="text-center mb-4 p-3 bg-light rounded">
+                        {% if document.file_type == 'image' %}
+                            <img src="{{ document.file.url }}" alt="{{ document.title }}" 
+                                 class="img-fluid rounded" style="max-height: 400px;">
+                        {% else %}
+                            <div class="py-4">
+                                <div class="display-1 text-muted mb-3">
+                                    {% if document.file_type == 'pdf' %}📄
+                                    {% elif document.file_type == 'document' %}📝
+                                    {% elif document.file_type == 'spreadsheet' %}📊
+                                    {% elif document.file_type == 'presentation' %}📽️
+                                    {% elif document.file_type == 'text' %}📄
+                                    {% elif document.file_type == 'archive' %}📦
+                                    {% else %}📎{% endif %}
+                                </div>
+                                <h5>{{ document.file_type|upper }} File</h5>
+                                <p class="text-muted">{{ document.get_file_size }}</p>
+                                <a href="{{ document.file.url }}" class="btn btn-primary" 
+                                   target="_blank" download>
+                                    Download File
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- File Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>File Information</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th>Type:</th>
+                                    <td>{{ document.file_type|title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Size:</th>
+                                    <td>{{ document.get_file_size }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Uploaded:</th>
+                                    <td>{{ document.uploaded_at|date:"F d, Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Filename:</th>
+                                    <td>{{ document.file.name|cut:"documents/" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        {% if document.task %}
+                        <div class="col-md-6">
+                            <h5>Linked Task</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>{{ document.task.title }}</h6>
+                                    <p class="text-muted mb-2">
+                                        <strong>Date:</strong> {{ document.task.date }}<br>
+                                        {% if document.task.location %}
+                                            <strong>Location:</strong> {{ document.task.location }}
+                                        {% endif %}
+                                    </p>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                        View Task Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description -->
+                    {% if document.description %}
+                        <h5>Description</h5>
+                        <div class="border rounded p-3 mb-4 bg-light">
+                            {{ document.description|linebreaks }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Tags -->
+                    {% if document.tags %}
+                        <h5>Tags</h5>
+                        <div class="mb-4">
+                            {% for tag in document.tag_list %}
+                                <a href="{% url 'calendar_app:document_list' %}?tag={{ tag }}" 
+                                   class="badge bg-primary text-decoration-none me-1">
+                                    {{ tag }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Actions Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ document.file.url }}" class="btn btn-primary w-100 mb-2" download>
+                        Download File
+                    </a>
+                    <a href="{% url 'calendar_app:document_list' %}" class="btn btn-outline-secondary w-100 mb-2">
+                        Back to Documents
+                    </a>
+                    <button type="button" class="btn btn-outline-danger w-100" 
+                            data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        Delete Document
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Related Documents -->
+            {% if related_documents %}
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Related Documents</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for rel_doc in related_documents|slice:":5" %}
+                            <a href="{% url 'calendar_app:document_detail' rel_doc.id %}" 
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ rel_doc.title|truncatechars:30 }}</h6>
+                                    <small class="text-muted">{{ rel_doc.get_file_size }}</small>
+                                </div>
+                                <small class="text-muted">
+                                    {{ rel_doc.file_type|title }} • {{ rel_doc.uploaded_at|date:"M d" }}
+                                </small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete "<strong>{{ document.title }}</strong>"?</p>
+                <p class="text-danger">
+                    <strong>Warning:</strong> This action cannot be undone. The file will be permanently deleted.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'calendar_app:delete_document' document.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .breadcrumb {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+    }
+    
+    .table th {
+        width: 30%;
+    }
+    
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+    }
+    
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

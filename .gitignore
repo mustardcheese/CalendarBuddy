@@ -9,6 +9,7 @@ __pycache__/
 *.pot
 *.pyc
 media/
+db.sqlite3
 
 # Environments
 .env

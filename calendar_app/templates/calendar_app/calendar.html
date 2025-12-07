@@ -61,32 +61,41 @@
                                         {% if day in tasks_by_date %}
                                             <div class="tasks-container">
                                                 {% for task in tasks_by_date|get_item:day %}
-                                                    <div class="task-item task-{{ task.color }}" 
+                                                    <div class="task-item task-{{ task.color }} {% if task.is_assigned_task %}assigned-task{% endif %}"
                                                          data-task-id="{{ task.id }}"
                                                          data-title="{{ task.title }}"
                                                          data-date="{{ task.date|date:'M d, Y' }}"
                                                          data-location="{{ task.location }}"
                                                          data-description="{{ task.description }}"
-                                                         data-category="{{ task.category }}"
                                                          data-color="{{ task.color }}"
+                                                         data-category="{{ task.get_category_display }}"
+                                                         data-is-assigned="{{ task.is_assigned_task }}"
+                                                         data-assigned-by="{% if task.assigned_by %}{{ task.assigned_by.username }}{% endif %}"
+                                                         data-group="{% if task.group %}{{ task.group.name }}{% endif %}"
+                                                         data-is-deletable="{{ task.is_deletable }}"
                                                          data-delete-url="{% url 'calendar_app:delete_task' task.id %}"
                                                          style="cursor: pointer;">
-                                                        
+
                                                         <!-- Display Title and Location -->
                                                         <div class="task-content">
+                                                            {% if task.is_assigned_task %}<span class="assigned-badge">📋</span>{% endif %}
                                                             <small class="task-title">{{ task.title|truncatechars:15 }}</small>
                                                             {% if task.location %}
                                                                 <br><small class="task-location">{{ task.location|truncatechars:12 }}</small>
                                                             {% endif %}
                                                         </div>
-                                                        
-                                                        <!-- Delete Button -->
-                                                        <form method="post" action="{% url 'calendar_app:delete_task' task.id %}" 
+
+                                                        <!-- Delete Button (only show if deletable) -->
+                                                        {% if task.can_be_deleted_by %}
+                                                        <form method="post" action="{% url 'calendar_app:delete_task' task.id %}"
                                                               class="delete-form" onclick="event.stopPropagation();">
                                                             {% csrf_token %}
-                                                            <button type="submit" class="btn-delete-task" 
+                                                            <button type="submit" class="btn-delete-task"
                                                                     onclick="return confirm('Are you sure?')">&times;</button>
                                                         </form>
+                                                        {% else %}
+                                                        <span class="task-locked" title="This task cannot be deleted">🔒</span>
+                                                        {% endif %}
                                                     </div>
                                                 {% endfor %}
                                             </div>
@@ -188,17 +197,17 @@
                             <label class="form-label small">Location:</label>
                             {{ task_form.location }}
                         </div>
-                        
+
                         <div class="mb-2">
                             <label class="form-label small">Color:</label>
                             {{ task_form.color }}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label small">Category:</label>
                             {{ task_form.category }}
                         </div>
-                        
+
                         <button type="submit" class="btn btn-sm btn-success w-100">Add Task</button>
                     </form>
                 </div>
@@ -221,19 +230,36 @@
                         <p><strong>Date:</strong><br><span id="taskModalDate"></span></p>
                     </div>
                     <div class="col-6">
-                        <p><strong>Category:</strong><br><span id="taskModalCategory"></span></p>
+                        <p><strong>Color:</strong>
+                            <span id="taskModalColor" class="badge"></span>
+                        </p>
                     </div>
                 </div>
-                <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Category:</strong><br><span id="taskModalCategory"></span></p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Location:</strong><br><span id="taskModalLocation"></span></p>
+                    </div>
+                </div>
                 <p><strong>Description:</strong><br><span id="taskModalDescription"></span></p>
-                <p><strong>Color:</strong> 
-                    <span id="taskModalColor" class="badge" style="margin-left: 10px;"></span>
-                </p>
+
+                <!-- Assigned Task Information -->
+                <div id="taskModalAssignedInfo" style="display: none;">
+                    <hr>
+                    <div class="alert alert-info mb-0">
+                        <h6>📋 Assigned Task</h6>
+                        <p class="mb-1"><strong>Assigned by:</strong> <span id="taskModalAssignedBy"></span></p>
+                        <p class="mb-1"><strong>Group:</strong> <span id="taskModalGroup"></span></p>
+                        <p class="mb-0" id="taskModalDeletableInfo"></p>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <form method="post" action="" id="taskModalDeleteForm" style="display: inline;">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this task?')">
+                    <button type="submit" class="btn btn-danger btn-sm" id="taskModalDeleteButton" onclick="return confirm('Are you sure you want to delete this task?')">
                         Delete Task
                     </button>
                 </form>
@@ -330,6 +356,24 @@
     .task-purple { background-color: #e2d9f3; border-left: 3px solid #6f42c1; }
     .task-orange { background-color: #ffe5d0; border-left: 3px solid #fd7e14; }
 
+    /* Assigned task styling */
+    .assigned-task {
+        border: 2px dashed #6c757d;
+        border-left: 3px solid #0d6efd !important;
+        background-image: linear-gradient(45deg, rgba(0,0,0,.05) 25%, transparent 25%, transparent 50%, rgba(0,0,0,.05) 50%, rgba(0,0,0,.05) 75%, transparent 75%, transparent);
+        background-size: 10px 10px;
+    }
+
+    .assigned-badge {
+        font-size: 10px;
+        margin-right: 2px;
+    }
+
+    .task-locked {
+        font-size: 10px;
+        margin-left: 5px;
+    }
+
     .list-group-item {
         padding: 0.5rem 0.75rem;
         font-size: 0.9rem;
@@ -355,26 +399,54 @@
                 const date = this.dataset.date;
                 const location = this.dataset.location || 'Not specified';
                 const description = this.dataset.description || 'No description';
-                const category = this.dataset.category || 'Uncategorized';
                 const color = this.dataset.color;
+                const category = this.dataset.category || 'Not specified';
                 const deleteUrl = this.dataset.deleteUrl;
-                
+                const isAssigned = this.dataset.isAssigned === 'True';
+                const assignedBy = this.dataset.assignedBy;
+                const group = this.dataset.group;
+                const isDeletable = this.dataset.isDeletable === 'True';
+
                 // Populate modal with task data
                 document.getElementById('taskModalTitle').textContent = title;
                 document.getElementById('taskModalDate').textContent = date;
                 document.getElementById('taskModalLocation').textContent = location;
-                document.getElementById('taskModalDescription').textContent = description;
                 document.getElementById('taskModalCategory').textContent = category;
-                
+                document.getElementById('taskModalDescription').textContent = description;
+
                 // Set color badge
                 const colorBadge = document.getElementById('taskModalColor');
                 colorBadge.textContent = color.charAt(0).toUpperCase() + color.slice(1);
                 colorBadge.className = 'badge';
                 colorBadge.classList.add('bg-' + getColorClass(color));
-                
+
+                // Handle assigned task information
+                const assignedInfo = document.getElementById('taskModalAssignedInfo');
+                if (isAssigned) {
+                    document.getElementById('taskModalAssignedBy').textContent = assignedBy;
+                    document.getElementById('taskModalGroup').textContent = group;
+                    const deletableInfo = document.getElementById('taskModalDeletableInfo');
+                    if (isDeletable) {
+                        deletableInfo.innerHTML = '<small class="text-muted">You can delete this task if needed.</small>';
+                    } else {
+                        deletableInfo.innerHTML = '<strong>🔒 This task cannot be deleted (required by admin)</strong>';
+                    }
+                    assignedInfo.style.display = 'block';
+                } else {
+                    assignedInfo.style.display = 'none';
+                }
+
+                // Update delete button visibility
+                const deleteButton = document.getElementById('taskModalDeleteButton');
+                if (!isDeletable && isAssigned) {
+                    deleteButton.style.display = 'none';
+                } else {
+                    deleteButton.style.display = 'inline-block';
+                }
+
                 // Update delete form action
                 document.getElementById('taskModalDeleteForm').action = deleteUrl;
-                
+
                 // Show modal
                 taskModal.show();
             });

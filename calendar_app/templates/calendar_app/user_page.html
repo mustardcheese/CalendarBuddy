@@ -1,6 +1,11 @@
 {% extends 'home/base.html' %}
 
 {% block content %}
+
+<!-- ================= LEAFLET CSS/JS AT TOP (VALID HTML) ================= -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <div class="container mt-4">
     <h2>Welcome, {{ user.username }}!</h2>
     <h4>Week of {{ start_of_week }} to {{ end_of_week }}</h4>
@@ -9,11 +14,18 @@
 
         <!-- Left column: Weekly tasks -->
         <div class="task-box" style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-            <h5>Your Tasks This Week</h5>
+            <h5>Your Tasks To Complete This Week</h5>
             {% if weekly_tasks %}
                 <div class="tasks-list">
                     {% for task in weekly_tasks %}
-                        <div class="task-card bg-{{ task.color }}">
+                    <div class="task-row" style="display: flex; align-items: center; gap: 10px;">
+
+                    <form action="{% url 'calendar_app:complete_task' task.id %}" method="POST" class="mb-2">
+                                {% csrf_token %}
+                                <input type="checkbox" class="task-checkbox" onchange="this.form.submit()">
+                            </form>
+
+                        <div class="task-card bg-{{ task.color }}" style="flex: 1;">
                             <div class="task-header">
                                 <h6>{{ task.title }}</h6>
                                 <small>{{ task.date|date:"D, M j" }}</small>
@@ -31,6 +43,7 @@
                                 <p class="task-location">📍 {{ task.location }}</p>
                             {% endif %}
                         </div>
+                    </div>
                     {% endfor %}
                 </div>
             {% else %}
@@ -40,16 +53,14 @@
 
         <!-- Right column: Map + Weather -->
         <div class="side-column" style="display: flex; flex-direction: column; gap: 20px;">
-            
+
+            <!-- MAP CARD -->
             <div class="map-box" style="background: #e9ecef; padding: 15px; border-radius: 10px;">
                 <h5>Map</h5>
-                <iframe
-                    width="100%"
-                    height="250"
-                    style="border:0; border-radius: 8px;">
-                </iframe>
+                <div id="map" style="height: 250px; border-radius: 8px;"></div>
             </div>
 
+            <!-- WEATHER CARD -->
             <div class="task-card bg-blue weather-box">
                 <h5>Weather in Atlanta</h5>
                 {% if weather %}
@@ -65,6 +76,34 @@
     </div>
 </div>
 
+
+<!-- ================= LEAFLET MAP SCRIPT (VALID) ================= -->
+<script>
+// @ts-nocheck
+
+// Create map centered on Atlanta
+var map = L.map('map').setView([33.7490, -84.3880], 11);
+
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+}).addTo(map);
+
+// Load task markers from Django JSON
+const markers = JSON.parse('{{ markers_json|safe }}');
+
+// Add markers
+markers.forEach(task => {
+    L.marker([task.lat, task.lon])
+        .addTo(map)
+        .bindPopup(
+            `<b>${task.title}</b><br>${task.location}<br>${task.date}`
+        );
+});
+</script>
+
+
+<!-- ================= STYLES ================= -->
 <style>
 .task-card {
     border-radius: 10px;
@@ -105,12 +144,17 @@
     color: #555;
 }
 
+.task-checkbox {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
 .weather-temp {
     font-size: 2em;
     font-weight: bold;
     margin: 5px 5px 10px 0;
     color: #0d6efd;
 }
-
 </style>
+
 {% endblock %}
