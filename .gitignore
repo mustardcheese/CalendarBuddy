@@ -13,6 +13,7 @@ db.sqlite3
 
 # Environments
 .env
+.vscode/
 venv/
 .env/
 __pycache__/
