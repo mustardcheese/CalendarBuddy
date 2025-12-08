@@ -1,0 +1,184 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Shared Calendar - {{ project.name }} - CalendarBuddy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .task-card {
+        border-left: 4px solid;
+        margin-bottom: 0.5rem;
+    }
+    .task-card.blue { border-left-color: #0d6efd; }
+    .task-card.green { border-left-color: #198754; }
+    .task-card.red { border-left-color: #dc3545; }
+    .task-card.yellow { border-left-color: #ffc107; }
+    .task-card.purple { border-left-color: #6f42c1; }
+    .task-card.orange { border-left-color: #fd7e14; }
+
+    .member-section {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+    }
+    .member-header {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .member-tasks {
+        padding: 1rem;
+    }
+    .task-time {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .completed-task {
+        opacity: 0.6;
+        text-decoration: line-through;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Shared Calendar</h1>
+            <p class="text-muted mb-0">Project: {{ project.name }}</p>
+        </div>
+        <div>
+            <a href="{% url 'project_detail' project.id %}" class="btn btn-outline-secondary">
+                Project Details
+            </a>
+            <a href="{% url 'project_list' %}" class="btn btn-secondary">
+                Back to Projects
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Project Members ({{ members.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for member in members %}
+                        <span class="badge bg-secondary">
+                            {{ member.username }}
+                            {% if member.get_full_name %}({{ member.get_full_name }}){% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Tasks by Team Member</h4>
+
+    {% for member, member_tasks in tasks_by_user.items %}
+    <div class="member-section">
+        <div class="member-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                {{ member.username }}
+                {% if member.get_full_name %}<small class="text-muted">({{ member.get_full_name }})</small>{% endif %}
+            </h5>
+            <span class="badge bg-primary">{{ member_tasks.count }} task{{ member_tasks.count|pluralize }}</span>
+        </div>
+        <div class="member-tasks">
+            {% if member_tasks %}
+            <div class="row">
+                {% for task in member_tasks %}
+                <div class="col-md-4 mb-2">
+                    <div class="card task-card {{ task.color }} {% if task.completed %}completed-task{% endif %}">
+                        <div class="card-body py-2 px-3">
+                            <h6 class="card-title mb-1">{{ task.title }}</h6>
+                            <div class="task-time">
+                                {{ task.date|date:"M d, Y" }}
+                                {% if task.start_time and task.end_time %}
+                                <br>{{ task.start_time|time:"g:i A" }} - {{ task.end_time|time:"g:i A" }}
+                                {% endif %}
+                            </div>
+                            {% if task.location %}
+                            <small class="text-muted d-block">{{ task.location }}</small>
+                            {% endif %}
+                            {% if task.category %}
+                            <span class="badge bg-light text-dark mt-1">{{ task.get_category_display }}</span>
+                            {% endif %}
+                            {% if task.completed %}
+                            <span class="badge bg-success mt-1">Completed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No tasks scheduled.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">
+        No team members or tasks to display yet.
+    </div>
+    {% endfor %}
+
+    {% if tasks %}
+    <hr class="my-4">
+    <h4 class="mb-3">All Tasks (Chronological)</h4>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Title</th>
+                    <th>Assigned To</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr class="{% if task.completed %}table-secondary{% endif %}">
+                    <td>{{ task.date|date:"M d, Y" }}</td>
+                    <td>
+                        {% if task.start_time %}
+                        {{ task.start_time|time:"g:i A" }}
+                        {% if task.end_time %} - {{ task.end_time|time:"g:i A" }}{% endif %}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge" style="background-color:
+                            {% if task.color == 'blue' %}#0d6efd
+                            {% elif task.color == 'green' %}#198754
+                            {% elif task.color == 'red' %}#dc3545
+                            {% elif task.color == 'yellow' %}#ffc107
+                            {% elif task.color == 'purple' %}#6f42c1
+                            {% elif task.color == 'orange' %}#fd7e14
+                            {% endif %}
+                        ">&nbsp;</span>
+                        {{ task.title }}
+                    </td>
+                    <td>{% if task.user %}{{ task.user.username }}{% else %}-{% endif %}</td>
+                    <td>{% if task.location %}{{ task.location }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if task.completed %}
+                        <span class="badge bg-success">Completed</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

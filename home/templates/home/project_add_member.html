@@ -1,0 +1,50 @@
+{% extends 'home/base.html' %}
+
+{% block title %}Add Collaborator - {{ project.name }} - CalendarBuddy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add Collaborator to {{ project.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Select User</label>
+                            {% if available_users %}
+                            <select name="username" id="username" class="form-select" required>
+                                <option value="">Choose a user...</option>
+                                {% for user in available_users %}
+                                <option value="{{ user.username }}">
+                                    {{ user.username }}{% if user.get_full_name %} ({{ user.get_full_name }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% else %}
+                            <p class="text-muted">No users available to add. All registered users are already members of this project.</p>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <select name="role" id="role" class="form-select">
+                                <option value="collaborator">Collaborator - Can view shared calendar</option>
+                                <option value="admin">Admin - Can manage project and members</option>
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            {% if available_users %}
+                            <button type="submit" class="btn btn-primary">Add Collaborator</button>
+                            {% endif %}
+                            <a href="{% url 'project_detail' project.id %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

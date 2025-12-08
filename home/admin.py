@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Group as DjangoGroup
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import Task, Group, GroupMembership
+from .models import Task, Group, GroupMembership, Project, ProjectMembership
 
 # Register your models here.
 
@@ -73,17 +73,17 @@ class TaskAdminForm(forms.ModelForm):
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     form = TaskAdminForm
-    list_display = ['title', 'user', 'date', 'category', 'group', 'assigned_by', 'is_deletable', 'created_at']
-    list_filter = ['date', 'color', 'category', 'is_deletable', 'group']
-    search_fields = ['title', 'description', 'user__username']
+    list_display = ['title', 'user', 'date', 'category', 'group', 'project', 'assigned_by', 'is_deletable', 'created_at']
+    list_filter = ['date', 'color', 'category', 'is_deletable', 'group', 'project']
+    search_fields = ['title', 'description', 'user__username', 'project__name']
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Basic Information', {
-            'fields': ('title', 'description', 'date', 'location', 'color', 'category')
+            'fields': ('title', 'description', 'date', 'start_time', 'end_time', 'location', 'color', 'category', 'completed')
         }),
         ('Assignment', {
-            'fields': ('user', 'group', 'assigned_by', 'is_deletable'),
-            'description': 'Assign to EITHER a user OR a group (not both)'
+            'fields': ('user', 'group', 'project', 'assigned_by', 'is_deletable'),
+            'description': 'Assign to EITHER a user OR a group (not both). Optionally link to a project.'
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -98,3 +98,40 @@ class TaskAdmin(admin.ModelAdmin):
         elif obj.user and not obj.group:
             obj.group = None
         super().save_model(request, obj, form, change)
+
+
+# Project Admin
+class ProjectMembershipInline(admin.TabularInline):
+    model = ProjectMembership
+    extra = 1
+    autocomplete_fields = ['user']
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = ['name', 'created_by', 'created_at', 'member_count']
+    list_filter = ['created_at', 'created_by']
+    search_fields = ['name', 'description', 'created_by__username']
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [ProjectMembershipInline]
+    fieldsets = (
+        ('Project Information', {
+            'fields': ('name', 'description', 'created_by')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def member_count(self, obj):
+        return obj.memberships.count()
+    member_count.short_description = 'Members'
+
+
+@admin.register(ProjectMembership)
+class ProjectMembershipAdmin(admin.ModelAdmin):
+    list_display = ['user', 'project', 'role', 'joined_at']
+    list_filter = ['role', 'joined_at', 'project']
+    search_fields = ['user__username', 'project__name']
+    autocomplete_fields = ['user', 'project']

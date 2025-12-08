@@ -51,6 +51,10 @@
                             href="{% url 'group_list' %}">Groups</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}"
+                            href="{% url 'project_list' %}">Projects</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'account_dashboard' %}active{% endif %}"
                             href="{% url 'account_dashboard' %}">My Account</a>
                     </li>

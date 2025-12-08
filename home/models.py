@@ -55,6 +55,68 @@ class GroupMembership(models.Model):
         return self.role == "admin"
 
 
+class Project(models.Model):
+    """
+    Represents a project where admins can add collaborators to view shared calendar
+    """
+
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_projects"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ["name"]
+
+    def get_all_members(self):
+        """Returns all users who are members of this project"""
+        return User.objects.filter(project_memberships__project=self)
+
+    def is_admin(self, user):
+        """Check if a user is an admin of this project"""
+        return self.memberships.filter(user=user, role="admin").exists()
+
+    def is_member(self, user):
+        """Check if a user is a member of this project"""
+        return self.memberships.filter(user=user).exists()
+
+
+class ProjectMembership(models.Model):
+    """
+    Links users to projects with role-based permissions
+    """
+
+    ROLE_CHOICES = [
+        ("admin", "Admin"),
+        ("collaborator", "Collaborator"),
+    ]
+
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="memberships"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="project_memberships"
+    )
+    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default="collaborator")
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["project", "user"]
+        ordering = ["project", "role", "user__username"]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.project.name} ({self.role})"
+
+    def is_admin(self):
+        return self.role == "admin"
+
+
 class Task(models.Model):
     COLOR_CHOICES = [
         ("blue", "Blue"),
@@ -117,6 +179,14 @@ class Task(models.Model):
     )
     is_deletable = models.BooleanField(
         default=True, help_text="Whether the user can delete this task"
+    )
+    project = models.ForeignKey(
+        "Project",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="tasks",
+        help_text="Project this task belongs to",
     )
 
     class Meta:

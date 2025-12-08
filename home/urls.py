@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, group_views
+from . import views, group_views, project_views
 
 urlpatterns = [
     path("", views.index, name="home"),
@@ -19,4 +19,11 @@ urlpatterns = [
     path("groups/<int:group_id>/remove-member/<int:user_id>/", group_views.group_remove_member, name="group_remove_member"),
     path("groups/<int:group_id>/assign-task/", group_views.assign_task, name="assign_task"),
     path("my-assigned-tasks/", group_views.my_assigned_tasks, name="my_assigned_tasks"),
+    # Project management
+    path("projects/", project_views.project_list, name="project_list"),
+    path("projects/create/", project_views.project_create, name="project_create"),
+    path("projects/<int:project_id>/", project_views.project_detail, name="project_detail"),
+    path("projects/<int:project_id>/add-member/", project_views.project_add_member, name="project_add_member"),
+    path("projects/<int:project_id>/remove-member/<int:user_id>/", project_views.project_remove_member, name="project_remove_member"),
+    path("projects/<int:project_id>/calendar/", project_views.project_calendar, name="project_calendar"),
 ]

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Group, Task
+from .models import Group, Task, Project
 
 
 class UserUpdateForm(forms.ModelForm):
@@ -82,3 +82,13 @@ class TaskAssignmentForm(forms.Form):
             raise forms.ValidationError("Please either select 'Assign to all' or choose specific users.")
 
         return cleaned_data
+
+
+class ProjectCreateForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Marketing Campaign, App Development'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Optional description of the project'}),
+        }
